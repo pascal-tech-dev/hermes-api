@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+  hermes-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    networks:
+      - hermes-net
+    depends_on:
+      - postgres
+      - rabbitmq
+
+  hermes-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: hermes
+      POSTGRES_PASSWORD: hermes
+      POSTGRES_DB: hermes
+    ports:
+      - "5432:5432"
+    networks:
+      - hermes-net
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  hermes-rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: hermes
+      RABBITMQ_DEFAULT_PASS: hermes
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - hermes-net
+
+networks:
+  hermes-net:
+
+volumes:
+  pgdata:

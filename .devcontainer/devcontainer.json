@@ -1,0 +1,26 @@
+{
+    "name": "Hermes API Dev Container",
+    "dockerComposeFile": "docker-compose.yml",
+    "workspaceFolder": "/workspace/${localWorkspaceFolderBasename}",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/${localWorkspaceFolderBasename},type=bind,consistency=cached",
+    "runServices": ["hermes-api", "hermes-db", "hermes-rabbitmq"],
+    "customizations": {
+      "vscode": {
+          "settings": {
+          "go.formatTool": "gofmt",
+          "go.lintTool": "golangci-lint"
+        },
+        "extensions": [
+            "golang.go",
+            "ms-azuretools.vscode-docker",
+            "esbenp.prettier-vscode"
+        ]
+      }
+    },
+    "remoteUser": "vscode",
+    "postCreateCommand": "go version && go env",
+    "forwardPorts": [8080, 50051, 5432, 5672, 15672],
+    "remoteEnv": {
+        "GOPATH": "/go"
+    }
+}
