@@ -1,30 +1,40 @@
-FROM golang:1.24.5-alpine
+# Resmi Go imajını kullanıyoruz (versiyonu ihtiyaçlarınıza göre değiştirin)
+FROM golang:1.24.5-bookworm
 
 ARG USERNAME=vscode
 ARG UID=1000
 
-# addgroup ile grup, adduser ile kullanıcı oluşturun
-RUN addgroup -g ${UID} ${USERNAME} \
- && adduser  -D \
-             -u ${UID} \
-             -G ${USERNAME} \
-             -h /home/${USERNAME} \
-             -s /bin/sh \
+# Grup ve kullanıcı oluşturma (Debian tabanında addgroup/adduser zaten var)
+RUN groupadd --gid ${UID} ${USERNAME} \
+ && useradd  --uid ${UID} \
+             --gid ${USERNAME} \
+             --create-home \
+             --shell /bin/bash \
              ${USERNAME}
 
-# Temel paketler (git, ca-certificates, vs.)
-RUN apk add --no-cache \
+# Temel paketler (Debian/Ubuntu tabanında apt-get ile)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      bash \
+      curl \
+      wget \
+      unzip \
+      zip \
+      tar \
+      gzip \
+      bzip2 \
       git \
-      ca-certificates
+      ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Çalışma dizinini ayarlayın
+# Çalışma dizinini ayarla
 WORKDIR /workspace
+RUN chown ${USERNAME}:${USERNAME} /workspace
 
 # vscode kullanıcısına geçiş
 USER ${USERNAME}
 
 # Modül önbelleğini kopyalayarak zaman kazanın (isteğe bağlı)
-# ADD go.mod go.sum ./
+# COPY go.mod go.sum ./
 # RUN go mod download
 
 # Container başlatıldığında default komut

@@ -1,0 +1,64 @@
+# .cursorrules
+# Hermes Notification Service Rules
+
+Project:
+- Name: Hermes Notification Service
+- Language: Go
+- Framework: Fiber
+- Description: Hermes is a multi-tenant notification service that supports transactional, reminder, and campaign notifications via push, email, and SMS.
+  Uses Fiber for REST, RabbitMQ for queueing, and PostgreSQL for persistence.
+
+Architecture:
+- Follow clean architecture principles: separate controllers, services, repositories, and models
+- Keep API-specific logic inside `api/rest` package
+- Business logic belongs to `internal/service`
+- Data access inside `internal/repository`
+- Messaging (RabbitMQ) inside `internal/queue`
+- No business logic inside controllers
+- Use dependency injection for services and repositories
+
+Coding Style:
+- Format code with `gofmt`
+- Prefer inline comments
+- Group imports: stdlib, third-party, local
+- Use `slog` for logging
+- Handle errors with structured errors
+- Return JSON responses always
+- Validate request bodies
+
+Testing:
+- Use `testify` for testing
+- Use table-driven test style
+- Target minimum 80% coverage
+
+Commit Messages:
+- Use conventional commits
+- Examples: 
+    feat: add new notification endpoint
+    fix: handle database connection leak
+    chore: update dependencies
+
+Dependencies:
+- github.com/gofiber/fiber/v2
+- github.com/gofiber/fiber/v2/middleware/logger
+- github.com/gofiber/fiber/v2/middleware/recover
+- github.com/jackc/pgx/v5
+- github.com/streadway/amqp
+- github.com/stretchr/testify
+
+Additional Requirements:
+- Use `context.Context` in all service and repository methods
+- All database queries must be parameterized (no string concatenation)
+- Load configuration via viper or env
+- Implement API key authentication middleware for all `/api/v1` endpoints
+- Gracefully handle shutdown signals (SIGINT, SIGTERM)
+- Include health check endpoint `/healthz`
+- Use structured logging with slog for all logs
+- Add Swagger/OpenAPI generation for REST endpoints
+- Avoid global state (except config & logger singletons)
+- All handlers return `fiber.Map` or JSON struct, no plain text
+- Implement request/response validation using `go-playground/validator` if needed
+- Support multi-tenant by scoping queries by `app_id`
+- Use `migrations/` folder for database migrations
+- All API versions (v1, future v2) live under `api/rest/vX`
+- Ensure code is gofmt and golangci-lint clean

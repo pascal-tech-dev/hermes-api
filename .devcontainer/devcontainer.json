@@ -1,8 +1,9 @@
 {
     "name": "Hermes API Dev Container",
-    "dockerComposeFile": "docker-compose.yml",
+    "dockerComposeFile": ["docker-compose.yml"],
+    "service": "hermes-api",
+    
     "workspaceFolder": "/workspace/${localWorkspaceFolderBasename}",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/${localWorkspaceFolderBasename},type=bind,consistency=cached",
     "runServices": ["hermes-api", "hermes-db", "hermes-rabbitmq"],
     "customizations": {
       "vscode": {
@@ -13,7 +14,8 @@
         "extensions": [
             "golang.go",
             "ms-azuretools.vscode-docker",
-            "esbenp.prettier-vscode"
+            "esbenp.prettier-vscode",
+            "golangci-lint.vscode-golangci-lint", // Recommended: Go linter integration
         ]
       }
     },
