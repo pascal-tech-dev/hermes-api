@@ -21,7 +21,6 @@
     },
     "remoteUser": "vscode",
     "postCreateCommand": "go version && go env",
-    "forwardPorts": [8080, 50051, 5432, 5672, 15672],
     "remoteEnv": {
         "GOPATH": "/go"
     }

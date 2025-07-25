@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
     volumes:
       - ..:/workspace/hermes-api:cached
     command: sleep infinity
@@ -34,9 +36,10 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: hermes
       RABBITMQ_DEFAULT_PASS: hermes
+    hostname: hermes-rabbitmq
     ports:
-      - "6000:5672"
-      - "6001:15672"
+      - "5673:5672"
+      - "15673:15672"
     networks:
       - hermes-net
 

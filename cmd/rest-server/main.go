@@ -23,7 +23,7 @@ func loadConfig() (*config.Config, error) {
 }
 
 // setupMiddleware configures Fiber middleware
-func setupMiddleware(app *fiber.App, cfg *config.Config) {
+func setupMiddleware(app *fiber.App, _ *config.Config) {
 	// Recovery middleware
 	app.Use(recover.New())
 
