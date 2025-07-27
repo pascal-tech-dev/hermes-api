@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"hermes-api/api/rest"
 	"hermes-api/config"
 	"hermes-api/pkg/logger"
 	"log"
@@ -11,10 +12,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	fiberLogger "github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/recover"
 	"go.uber.org/zap"
+
+	"hermes-api/internal/middleware"
 )
 
 // loadConfig loads configuration from environment variables
@@ -24,22 +24,20 @@ func loadConfig() (*config.Config, error) {
 
 // setupMiddleware configures Fiber middleware
 func setupMiddleware(app *fiber.App, _ *config.Config) {
-	// Recovery middleware
-	app.Use(recover.New())
+	// Request ID middleware (FIRST - generates request ID for all subsequent middleware)
+	app.Use(middleware.RequestID())
+
+	// Custom recovery middleware (catches panics)
+	app.Use(middleware.Recovery())
 
 	// CORS middleware
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
-	}))
+	app.Use(middleware.CORS())
 
 	// Logger middleware
-	app.Use(fiberLogger.New(fiberLogger.Config{
-		Format:     "[${time}] ${status} - ${latency} ${method} ${path}\n",
-		TimeFormat: "2006-01-02 15:04:05",
-		TimeZone:   "Local",
-	}))
+	app.Use(middleware.Logger())
+
+	// Error handler middleware (before routes)
+	app.Use(middleware.ErrorHandler)
 }
 
 // setupRoutes configures API routes
@@ -56,31 +54,7 @@ func setupRoutes(app *fiber.App) {
 
 	// API v1 routes
 	api := app.Group("/api/v1")
-
-	// Notifications routes (placeholder for now)
-	notifications := api.Group("/notifications")
-	notifications.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"message": "Notifications endpoint - coming soon",
-			"status":  "not implemented",
-		})
-	})
-
-	notifications.Post("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"message": "Create notification endpoint - coming soon",
-			"status":  "not implemented",
-		})
-	})
-
-	// 404 handler
-	app.Use(func(c *fiber.Ctx) error {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error":   "Not Found",
-			"message": "The requested resource was not found",
-			"path":    c.Path(),
-		})
-	})
+	rest.SetupRoutes(api)
 }
 
 func main() {
@@ -101,9 +75,7 @@ func main() {
 		}
 	}()
 
-	log := logger.GetLogger()
-
-	log.Info("🚀 Starting Hermes API server",
+	logger.Info("🚀 Starting Hermes API server",
 		zap.String("environment", cfg.Server.Environment),
 		zap.String("port", cfg.Server.Port),
 		zap.String("log_level", cfg.Logging.Level),
@@ -115,22 +87,6 @@ func main() {
 		ReadTimeout:  cfg.Server.ReadTimeout,
 		WriteTimeout: cfg.Server.WriteTimeout,
 		IdleTimeout:  cfg.Server.IdleTimeout,
-		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			logger.Error("Request error", err,
-				zap.String("method", c.Method()),
-				zap.String("path", c.Path()),
-				zap.String("ip", c.IP()),
-			)
-
-			code := fiber.StatusInternalServerError
-			if e, ok := err.(*fiber.Error); ok {
-				code = e.Code
-			}
-			return c.Status(code).JSON(fiber.Map{
-				"error":   "Internal Server Error",
-				"message": err.Error(),
-			})
-		},
 	})
 
 	// Setup middleware

@@ -24,16 +24,32 @@ func Init(level string, format string) error {
 		config.EncoderConfig.TimeKey = "timestamp"
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 		config.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+		// Disable stack traces in production
+		config.EncoderConfig.StacktraceKey = ""
+		// Enable caller information
+		config.Development = false
+		config.DisableCaller = false
+		config.DisableStacktrace = true
+		// Set caller key
+		config.EncoderConfig.CallerKey = "caller"
 	} else {
 		config = zap.NewDevelopmentConfig()
 		config.Level = zap.NewAtomicLevelAt(logLevel)
 		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		// Disable stack traces in development too
+		config.EncoderConfig.StacktraceKey = ""
+		// Enable caller information
+		config.Development = true
+		config.DisableCaller = false
+		config.DisableStacktrace = true
+		// Set caller key
+		config.EncoderConfig.CallerKey = "caller"
 	}
 
-	// Build logger
+	// Build logger with caller information
 	var err2 error
-	log, err2 = config.Build()
+	log, err2 = config.Build(zap.AddCaller())
 	if err2 != nil {
 		return err2
 	}
@@ -49,8 +65,8 @@ func GetLogger() *zap.Logger {
 	if log == nil {
 		// Initialize with defaults if not initialized
 		if err := Init("info", "text"); err != nil {
-			// Fallback to a basic logger if initialization fails
-			log, _ = zap.NewDevelopment()
+			// If initialization fails, return nil - this should not happen in normal operation
+			return nil
 		}
 	}
 	return log
@@ -80,7 +96,7 @@ func parseLogLevel(level string) (zapcore.Level, error) {
 
 // Info logs info level message
 func Info(msg string, fields ...zap.Field) {
-	GetLogger().Info(msg, fields...)
+	GetLogger().WithOptions(zap.AddCallerSkip(1)).Info(msg, fields...)
 }
 
 // Error logs error level message
@@ -88,7 +104,7 @@ func Error(msg string, err error, fields ...zap.Field) {
 	if err != nil {
 		fields = append(fields, zap.Error(err))
 	}
-	GetLogger().Error(msg, fields...)
+	GetLogger().WithOptions(zap.AddCallerSkip(1)).Error(msg, fields...)
 }
 
 // Debug logs debug level message
@@ -130,5 +146,9 @@ func WithNotification(notificationID, recipient, notificationType string) *zap.L
 
 // Sync flushes any buffered log entries
 func Sync() error {
-	return GetLogger().Sync()
+	if log != nil {
+		// Ignore sync errors for stderr/stdout
+		_ = log.Sync()
+	}
+	return nil
 }

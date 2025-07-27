@@ -1,6 +1,7 @@
 package response
 
 import (
+	"hermes-api/pkg/constants"
 	"hermes-api/pkg/errors"
 	"time"
 
@@ -9,38 +10,37 @@ import (
 
 // Response represents a standardized API response structure
 type Response struct {
-	Success    bool                   `json:"success"`
-	Message    string                 `json:"message,omitempty"`
-	Data       interface{}            `json:"data,omitempty"`
-	HTTPStatus int                    `json:"http_status,omitempty"`
-	Error      *ErrorInfo             `json:"error,omitempty"`
-	Meta       *MetaInfo              `json:"meta,omitempty"`
-	API        *APIInfo               `json:"api,omitempty"`
-	Timestamp  string                 `json:"timestamp"`
-	RequestID  string                 `json:"request_id,omitempty"`
-	Extra      map[string]interface{} `json:"extra,omitempty"`
+	Success    bool           `json:"success"`
+	Message    string         `json:"message,omitempty"`
+	Data       any            `json:"data,omitempty"`
+	StatusCode int            `json:"status_code,omitempty"`
+	Error      *ErrorInfo     `json:"error,omitempty"`
+	Meta       *MetaInfo      `json:"meta,omitempty"`
+	API        *APIInfo       `json:"api,omitempty"`
+	Timestamp  string         `json:"timestamp"`
+	RequestID  string         `json:"request_id,omitempty"`
+	Extra      map[string]any `json:"extra,omitempty"`
 }
 
 // ErrorInfo contains error-related information
 type ErrorInfo struct {
-	Type    errors.ErrorType       `json:"type,omitempty"`
-	Code    errors.ErrorCode       `json:"code,omitempty"`
-	Message string                 `json:"message,omitempty"`
-	Details map[string]interface{} `json:"details,omitempty"`
-	TraceID string                 `json:"trace_id,omitempty"`
+	Type    errors.ErrorType `json:"type,omitempty"`
+	Code    errors.ErrorCode `json:"code,omitempty"`
+	Message string           `json:"message,omitempty"`
+	Details map[string]any   `json:"details,omitempty"`
 }
 
 // MetaInfo contains metadata about the response
 type MetaInfo struct {
-	Page       int                    `json:"page,omitempty"`
-	Limit      int                    `json:"limit,omitempty"`
-	Total      int64                  `json:"total,omitempty"`
-	TotalPages int                    `json:"total_pages,omitempty"`
-	HasNext    bool                   `json:"has_next,omitempty"`
-	HasPrev    bool                   `json:"has_prev,omitempty"`
-	SortBy     string                 `json:"sort_by,omitempty"`
-	SortOrder  string                 `json:"sort_order,omitempty"`
-	Filters    map[string]interface{} `json:"filters,omitempty"`
+	Page       int            `json:"page,omitempty"`
+	Limit      int            `json:"limit,omitempty"`
+	Total      int64          `json:"total,omitempty"`
+	TotalPages int            `json:"total_pages,omitempty"`
+	HasNext    bool           `json:"has_next,omitempty"`
+	HasPrev    bool           `json:"has_prev,omitempty"`
+	SortBy     string         `json:"sort_by,omitempty"`
+	SortOrder  string         `json:"sort_order,omitempty"`
+	Filters    map[string]any `json:"filters,omitempty"`
 }
 
 // APIInfo contains API-related information
@@ -74,22 +74,53 @@ func New() *ResponseBuilder {
 	}
 }
 
-// Success creates a successful response
-func Success(data interface{}, message string) *Response {
-	return New().
-		WithSuccess(true).
-		WithData(data).
-		WithMessage(message).
-		Build()
+// SuccessResponse creates a success options
+func SuccessResponse(data interface{}, message string) ApiResponseOptions {
+	return ApiResponseOptions{
+		Success:    true,
+		Data:       data,
+		Message:    message,
+		StatusCode: constants.StatusOK,
+	}
 }
 
-// Error creates an error response
-func Error(err *errors.AppError, message string) *Response {
-	return New().
-		WithSuccess(false).
-		WithError(err).
-		WithMessage(message).
-		Build()
+// CreatedResponse creates a created options
+func CreatedResponse(data interface{}, message string) ApiResponseOptions {
+	return ApiResponseOptions{
+		Success:    true,
+		Data:       data,
+		Message:    message,
+		StatusCode: constants.StatusCreated,
+	}
+}
+
+// AcceptedResponse creates an accepted options
+func AcceptedResponse(data interface{}, message string) ApiResponseOptions {
+	return ApiResponseOptions{
+		Success:    true,
+		Data:       data,
+		Message:    message,
+		StatusCode: constants.StatusAccepted,
+	}
+}
+
+// NoContentResponse creates a no content options
+func NoContentResponse(message string) ApiResponseOptions {
+	return ApiResponseOptions{
+		Success:    true,
+		Message:    message,
+		StatusCode: constants.StatusNoContent,
+	}
+}
+
+// ErrorResponse creates an error options
+func ErrorResponse(err *errors.AppError, message string) ApiResponseOptions {
+	return ApiResponseOptions{
+		Success:    false,
+		Error:      err,
+		Message:    message,
+		StatusCode: err.GetHTTPStatus(),
+	}
 }
 
 // WithSuccess sets the success flag
@@ -118,7 +149,6 @@ func (rb *ResponseBuilder) WithError(err *errors.AppError) *ResponseBuilder {
 			Code:    err.Code,
 			Message: err.Message,
 			Details: err.Details,
-			// HTTPStatus: err.HTTPStatus,
 		}
 	}
 	return rb
@@ -187,14 +217,14 @@ func ApiResponse(c *fiber.Ctx, options ApiResponseOptions) error {
 	statusCode := options.StatusCode
 	if statusCode == 0 {
 		if options.Success {
-			statusCode = fiber.StatusOK
+			statusCode = constants.StatusOK
 		} else if options.Error != nil {
 			statusCode = options.Error.GetHTTPStatus()
 			if statusCode == 0 {
-				statusCode = fiber.StatusInternalServerError
+				statusCode = constants.StatusInternalError
 			}
 		} else {
-			statusCode = fiber.StatusOK
+			statusCode = constants.StatusOK
 		}
 	}
 
@@ -205,7 +235,7 @@ func ApiResponse(c *fiber.Ctx, options ApiResponseOptions) error {
 type ApiResponseOptions struct {
 	Success    bool             `json:"success"`
 	Message    string           `json:"message,omitempty"`
-	Data       interface{}      `json:"data,omitempty"`
+	Data       any              `json:"data,omitempty"`
 	Error      *errors.AppError `json:"error,omitempty"`
 	StatusCode int              `json:"-"`
 	RequestID  string           `json:"request_id,omitempty"`
