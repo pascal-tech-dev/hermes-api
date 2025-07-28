@@ -5,6 +5,8 @@ import (
 	"hermes-api/api/rest"
 	"hermes-api/config"
 	"hermes-api/internal/database"
+	"hermes-api/internal/repository"
+	"hermes-api/internal/service"
 	"hermes-api/pkg/logger"
 	"log"
 	"os"
@@ -42,7 +44,7 @@ func setupMiddleware(app *fiber.App, _ *config.Config) {
 }
 
 // setupRoutes configures API routes
-func setupRoutes(app *fiber.App) {
+func setupRoutes(app *fiber.App, serviceManager service.ServiceManager) {
 	// Health check endpoint
 	app.Get("/health", func(c *fiber.Ctx) error {
 		// Check database connection
@@ -67,7 +69,7 @@ func setupRoutes(app *fiber.App) {
 
 	// API v1 routes
 	api := app.Group("/api/v1")
-	rest.SetupRoutes(api)
+	rest.SetupRoutes(api, serviceManager)
 }
 
 // setupDatabase initializes the database connection
@@ -123,6 +125,12 @@ func main() {
 		logger.Fatal("❌ Failed to setup database", err)
 	}
 
+	// Initialize repositories
+	repoManager := repository.NewRepositoryManager(database.DB)
+
+	// Initialize services
+	serviceManager := service.NewServiceManager(repoManager)
+
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
 		AppName:      "Hermes API",
@@ -135,7 +143,7 @@ func main() {
 	setupMiddleware(app, cfg)
 
 	// Setup routes
-	setupRoutes(app)
+	setupRoutes(app, serviceManager)
 
 	// Start server in a goroutine
 	go func() {

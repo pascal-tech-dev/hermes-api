@@ -3,12 +3,22 @@ package model
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
+)
+
+// UserRole represents a user role in the system
+type UserRole string
+
+const (
+	UserRoleSuperAdmin UserRole = "super_admin"
+	UserRoleAdmin      UserRole = "admin"
+	UserRoleViewer     UserRole = "viewer"
 )
 
 // User represents a user in the system
 type User struct {
-	ID        uint           `json:"id" gorm:"primaryKey"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
 	Email     string         `json:"email" gorm:"uniqueIndex;not null"`
 	Username  string         `json:"username" gorm:"uniqueIndex;not null"`
 	Password  string         `json:"-" gorm:"not null"` // "-" means this field won't be included in JSON
