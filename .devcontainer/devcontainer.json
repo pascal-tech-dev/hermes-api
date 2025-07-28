@@ -16,6 +16,7 @@
             "ms-azuretools.vscode-docker",
             "esbenp.prettier-vscode",
             "golangci-lint.vscode-golangci-lint", // Recommended: Go linter integration
+            "postman.postman-for-vscode"
         ]
       }
     },

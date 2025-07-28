@@ -8,11 +8,11 @@ server:
   idle_timeout: 120s
 
 database:
-  host: localhost
+  host: hermes-db
   port: 5432
-  name: hermes_dev
-  user: hermes_user
-  password: ${DB_PASSWORD}
+  name: hermes
+  user: hermes
+  password: hermes
   ssl_mode: disable
   max_connections: 10
   connection_timeout: 5s

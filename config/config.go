@@ -95,10 +95,10 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("server.idle_timeout", "120s")
 
 	// Database defaults
-	v.SetDefault("database.host", "localhost")
+	v.SetDefault("database.host", "hermes-db")
 	v.SetDefault("database.port", "5432")
-	v.SetDefault("database.name", "hermes_dev")
-	v.SetDefault("database.user", "hermes_user")
+	v.SetDefault("database.name", "hermes")
+	v.SetDefault("database.user", "hermes")
 	v.SetDefault("database.ssl_mode", "disable")
 
 	// Redis defaults

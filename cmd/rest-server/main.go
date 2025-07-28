@@ -4,6 +4,7 @@ import (
 	"context"
 	"hermes-api/api/rest"
 	"hermes-api/config"
+	"hermes-api/internal/database"
 	"hermes-api/pkg/logger"
 	"log"
 	"os"
@@ -44,17 +45,53 @@ func setupMiddleware(app *fiber.App, _ *config.Config) {
 func setupRoutes(app *fiber.App) {
 	// Health check endpoint
 	app.Get("/health", func(c *fiber.Ctx) error {
+		// Check database connection
+		dbStatus := "ok"
+		if database.DB == nil {
+			dbStatus = "disconnected"
+		} else {
+			sqlDB, err := database.DB.DB()
+			if err != nil || sqlDB.Ping() != nil {
+				dbStatus = "error"
+			}
+		}
+
 		return c.JSON(fiber.Map{
 			"status":    "ok",
 			"service":   "hermes-api",
 			"timestamp": time.Now().UTC(),
 			"version":   "1.0.0",
+			"database":  dbStatus,
 		})
 	})
 
 	// API v1 routes
 	api := app.Group("/api/v1")
 	rest.SetupRoutes(api)
+}
+
+// setupDatabase initializes the database connection
+func setupDatabase(cfg *config.Config) error {
+	logger.Info("🔌 Connecting to PostgreSQL database",
+		zap.String("host", cfg.Database.Host),
+		zap.String("port", cfg.Database.Port),
+		zap.String("database", cfg.Database.Name),
+		zap.String("user", cfg.Database.User),
+	)
+
+	// Connect to database
+	if err := database.Connect(&cfg.Database); err != nil {
+		return err
+	}
+
+	// Run database migrations
+	logger.Info("🔄 Running database migrations...")
+	if err := database.AutoMigrate(); err != nil {
+		return err
+	}
+
+	logger.Info("✅ Database setup completed successfully")
+	return nil
 }
 
 func main() {
@@ -80,6 +117,11 @@ func main() {
 		zap.String("port", cfg.Server.Port),
 		zap.String("log_level", cfg.Logging.Level),
 	)
+
+	// Setup database
+	if err := setupDatabase(cfg); err != nil {
+		logger.Fatal("❌ Failed to setup database", err)
+	}
 
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
@@ -115,6 +157,13 @@ func main() {
 
 	if err := app.ShutdownWithContext(ctx); err != nil {
 		logger.Fatal("Server forced to shutdown", err)
+	}
+
+	// Close database connection
+	if err := database.Close(); err != nil {
+		logger.Error("Failed to close database connection", err)
+	} else {
+		logger.Info("✅ Database connection closed")
 	}
 
 	logger.Info("✅ Server exited gracefully")
