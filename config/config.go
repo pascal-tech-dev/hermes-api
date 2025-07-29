@@ -14,6 +14,7 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Logging  LoggingConfig  `mapstructure:"logging"`
+	Security SecurityConfig `mapstructure:"security"`
 }
 
 // ServerConfig holds server-related configuration
@@ -49,6 +50,13 @@ type LoggingConfig struct {
 	Level  string `mapstructure:"level"`
 	Format string `mapstructure:"format"`
 	Output string `mapstructure:"output"`
+}
+
+// SecurityConfig holds security-related configuration
+type SecurityConfig struct {
+	JWTSecret   string   `mapstructure:"jwt_secret"`
+	BcryptCost  int      `mapstructure:"bcrypt_cost"`
+	CORSOrigins []string `mapstructure:"cors_origins"`
 }
 
 // Load loads configuration from multiple sources
@@ -93,6 +101,10 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("server.read_timeout", "30s")
 	v.SetDefault("server.write_timeout", "30s")
 	v.SetDefault("server.idle_timeout", "120s")
+
+	// Security defaults
+	v.SetDefault("security.jwt_secret", "your-super-secret-jwt-key-change-in-production")
+	v.SetDefault("security.bcrypt_cost", 12)
 
 	// Database defaults
 	v.SetDefault("database.host", "hermes-db")

@@ -8,26 +8,31 @@ import (
 // ControllerManager manages all controllers and their dependencies
 type ControllerManager struct {
 	userController *UserController
+	authController *AuthController
 	// Add other controllers as needed:
 	// productController *ProductController
 	// orderController   *OrderController
-	// authController    *AuthController
 }
 
 // NewControllerManager creates a new controller manager
 func NewControllerManager(serviceManager service.ServiceManager) *ControllerManager {
 	return &ControllerManager{
 		userController: NewUserController(serviceManager.User()),
+		authController: NewAuthController(serviceManager.Auth()),
 		// Initialize other controllers:
 		// productController: NewProductController(serviceManager.Product()),
 		// orderController:   NewOrderController(serviceManager.Order()),
-		// authController:    NewAuthController(serviceManager.Auth()),
 	}
 }
 
 // User returns the user controller
 func (cm *ControllerManager) User() *UserController {
 	return cm.userController
+}
+
+// Auth returns the auth controller
+func (cm *ControllerManager) Auth() *AuthController {
+	return cm.authController
 }
 
 // Product returns the product controller (future)

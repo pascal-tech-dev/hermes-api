@@ -8,29 +8,20 @@ import (
 // ServiceManager manages all services
 type ServiceManager interface {
 	User() UserService
-	// Add other services here as needed
-	// Product() ProductService
-	// Order() OrderService
-	// Notification() NotificationService
+	Auth() AuthService
 }
 
 // serviceManager implements ServiceManager
 type serviceManager struct {
 	userService UserService
-	// Add other services here
-	// productService ProductService
-	// orderService OrderService
-	// notificationService NotificationService
+	authService AuthService
 }
 
 // NewServiceManager creates a new service manager using a RepositoryManager
-func NewServiceManager(repoManager repository.RepositoryManager) ServiceManager {
+func NewServiceManager(repoManager repository.RepositoryManager, jwtSecret string) ServiceManager {
 	return &serviceManager{
 		userService: NewUserService(repoManager.User()),
-		// Add other services
-		// productService: NewProductService(repoManager.Product()),
-		// orderService: NewOrderService(repoManager.Order(), repoManager.User()),
-		// notificationService: NewNotificationService(repoManager.Notification()),
+		authService: NewAuthService(repoManager.User(), jwtSecret),
 	}
 }
 
@@ -39,15 +30,7 @@ func (sm *serviceManager) User() UserService {
 	return sm.userService
 }
 
-// Add other service getters as needed
-// func (sm *serviceManager) Product() ProductService {
-//     return sm.productService
-// }
-//
-// func (sm *serviceManager) Order() OrderService {
-//     return sm.orderService
-// }
-//
-// func (sm *serviceManager) Notification() NotificationService {
-//     return sm.notificationService
-// }
+// Auth returns the auth service
+func (sm *serviceManager) Auth() AuthService {
+	return sm.authService
+}

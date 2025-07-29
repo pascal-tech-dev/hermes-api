@@ -40,11 +40,11 @@ func setupMiddleware(app *fiber.App, _ *config.Config) {
 	app.Use(middleware.Logger())
 
 	// Error handler middleware (before routes)
-	app.Use(middleware.ErrorHandler)
+	app.Use(middleware.ErrorHandler())
 }
 
 // setupRoutes configures API routes
-func setupRoutes(app *fiber.App, serviceManager service.ServiceManager) {
+func setupRoutes(app *fiber.App, serviceManager service.ServiceManager, authMiddleware fiber.Handler) {
 	// Health check endpoint
 	app.Get("/health", func(c *fiber.Ctx) error {
 		// Check database connection
@@ -69,7 +69,7 @@ func setupRoutes(app *fiber.App, serviceManager service.ServiceManager) {
 
 	// API v1 routes
 	api := app.Group("/api/v1")
-	rest.SetupRoutes(api, serviceManager)
+	rest.SetupRoutes(api, serviceManager, authMiddleware)
 }
 
 // setupDatabase initializes the database connection
@@ -129,7 +129,7 @@ func main() {
 	repoManager := repository.NewRepositoryManager(database.DB)
 
 	// Initialize services
-	serviceManager := service.NewServiceManager(repoManager)
+	serviceManager := service.NewServiceManager(repoManager, cfg.Security.JWTSecret)
 
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
@@ -142,8 +142,11 @@ func main() {
 	// Setup middleware
 	setupMiddleware(app, cfg)
 
+	// Create auth middleware
+	authMiddleware := middleware.AuthMiddleware(serviceManager.Auth())
+
 	// Setup routes
-	setupRoutes(app, serviceManager)
+	setupRoutes(app, serviceManager, authMiddleware)
 
 	// Start server in a goroutine
 	go func() {

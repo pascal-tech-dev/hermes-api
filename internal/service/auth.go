@@ -1,0 +1,153 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"hermes-api/internal/model"
+	"hermes-api/internal/repository"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+// AuthService defines the interface for authentication operations
+type AuthService interface {
+	Register(ctx context.Context, email, username, password, firstName, lastName string) (*model.User, error)
+	Login(ctx context.Context, email, password string) (string, *model.User, error)
+	ValidateToken(tokenString string) (*jwt.Token, error)
+	GetUserFromToken(tokenString string) (*model.User, error)
+}
+
+// authService implements AuthService
+type authService struct {
+	userRepo  repository.UserRepository
+	jwtSecret string
+}
+
+// NewAuthService creates a new auth service
+func NewAuthService(userRepo repository.UserRepository, jwtSecret string) AuthService {
+	return &authService{
+		userRepo:  userRepo,
+		jwtSecret: jwtSecret,
+	}
+}
+
+// Register creates a new user account
+func (s *authService) Register(ctx context.Context, email, username, password, firstName, lastName string) (*model.User, error) {
+	// Check if user with same email already exists
+	existingUser, err := s.userRepo.GetByEmail(ctx, email)
+	if err == nil && existingUser != nil {
+		return nil, fmt.Errorf("user with email %s already exists", email)
+	}
+
+	// Check if user with same username already exists
+	existingUser, err = s.userRepo.GetByUsername(ctx, username)
+	if err == nil && existingUser != nil {
+		return nil, fmt.Errorf("user with username %s already exists", username)
+	}
+
+	// Create new user
+	user := &model.User{
+		Email:     email,
+		Username:  username,
+		Password:  password, // Will be hashed by GORM hook
+		FirstName: firstName,
+		LastName:  lastName,
+		IsActive:  true,
+	}
+
+	if err := s.userRepo.Create(ctx, user); err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return user, nil
+}
+
+// Login authenticates a user and returns a JWT token
+func (s *authService) Login(ctx context.Context, email, password string) (string, *model.User, error) {
+	// Get user by email
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return "", nil, fmt.Errorf("invalid credentials")
+	}
+
+	// Check if user is active
+	if !user.IsActive {
+		return "", nil, fmt.Errorf("account is deactivated")
+	}
+
+	// Verify password
+	if !user.CheckPassword(password) {
+		return "", nil, fmt.Errorf("invalid credentials")
+	}
+
+	// Generate JWT token
+	token, err := s.generateToken(user)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to generate token: %w", err)
+	}
+
+	return token, user, nil
+}
+
+// ValidateToken validates a JWT token
+func (s *authService) ValidateToken(tokenString string) (*jwt.Token, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Validate signing method
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(s.jwtSecret), nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("invalid token: %w", err)
+	}
+
+	if !token.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
+
+	return token, nil
+}
+
+// GetUserFromToken extracts user information from a JWT token
+func (s *authService) GetUserFromToken(tokenString string) (*model.User, error) {
+	token, err := s.ValidateToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, fmt.Errorf("invalid token claims")
+	}
+
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("invalid user ID in token")
+	}
+
+	// Get user from database
+	user, err := s.userRepo.GetByID(context.Background(), uint(userID))
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+
+	return user, nil
+}
+
+// generateToken creates a JWT token for a user
+func (s *authService) generateToken(user *model.User) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id":  user.ID,
+		"email":    user.Email,
+		"username": user.Username,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(), // 24 hours
+		"iat":      time.Now().Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(s.jwtSecret))
+}

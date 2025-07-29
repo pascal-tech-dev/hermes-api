@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -37,12 +38,32 @@ func (User) TableName() string {
 
 // BeforeCreate is a GORM hook that runs before creating a record
 func (u *User) BeforeCreate(tx *gorm.DB) error {
-	// You can add custom logic here, like hashing passwords
+	// Hash password before saving
+	if u.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		u.Password = string(hashedPassword)
+	}
 	return nil
 }
 
 // BeforeUpdate is a GORM hook that runs before updating a record
 func (u *User) BeforeUpdate(tx *gorm.DB) error {
-	// You can add custom logic here
+	// Hash password if it's being updated
+	if u.Password != "" && !tx.Statement.Changed("Password") {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		u.Password = string(hashedPassword)
+	}
 	return nil
+}
+
+// CheckPassword compares the provided password with the hashed password
+func (u *User) CheckPassword(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+	return err == nil
 }
