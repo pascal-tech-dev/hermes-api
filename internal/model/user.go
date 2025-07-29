@@ -19,7 +19,7 @@ const (
 
 // User represents a user in the system
 type User struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
+	ID        uuid.UUID      `json:"id";primaryKey"`
 	Email     string         `json:"email" gorm:"uniqueIndex;not null"`
 	Username  string         `json:"username" gorm:"uniqueIndex;not null"`
 	Password  string         `json:"-" gorm:"not null"` // "-" means this field won't be included in JSON
@@ -38,6 +38,11 @@ func (User) TableName() string {
 
 // BeforeCreate is a GORM hook that runs before creating a record
 func (u *User) BeforeCreate(tx *gorm.DB) error {
+	// Generate UUID for the user
+	if u.ID == uuid.Nil {
+		u.ID = uuid.New()
+	}
+
 	// Hash password before saving
 	if u.Password != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)

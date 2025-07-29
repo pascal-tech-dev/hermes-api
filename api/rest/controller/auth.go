@@ -41,18 +41,13 @@ type LoginRequest struct {
 func (c *AuthController) Register(ctx *fiber.Ctx) error {
 	var req RegisterRequest
 	if err := ctx.BodyParser(&req); err != nil {
-		logger.Error("Failed to parse register request", err)
 		appErr := errors.New(errors.ErrorTypeValidation, errors.ErrorCodeInvalidFormat, "Invalid request body")
-		options := response.ErrorResponse(appErr, "Invalid request body")
-		return response.ApiResponse(ctx, options)
+		return appErr // return the error to the middleware
 	}
 
 	user, err := c.authService.Register(ctx.Context(), req.Email, req.Username, req.Password, req.FirstName, req.LastName)
 	if err != nil {
-		logger.Error("Failed to register user", err, zap.String("email", req.Email))
-		appErr := errors.New(errors.ErrorTypeValidation, errors.ErrorCodeInvalidValue, err.Error())
-		options := response.ErrorResponse(appErr, "Failed to register user")
-		return response.ApiResponse(ctx, options)
+		return err // return the error to the middleware
 	}
 
 	options := response.CreatedResponse(user, "User registered successfully")

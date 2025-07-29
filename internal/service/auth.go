@@ -7,6 +7,7 @@ import (
 
 	"hermes-api/internal/model"
 	"hermes-api/internal/repository"
+	"hermes-api/pkg/errors"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -38,13 +39,23 @@ func (s *authService) Register(ctx context.Context, email, username, password, f
 	// Check if user with same email already exists
 	existingUser, err := s.userRepo.GetByEmail(ctx, email)
 	if err == nil && existingUser != nil {
-		return nil, fmt.Errorf("user with email %s already exists", email)
+		appErr := errors.New(
+			errors.ErrorTypeConflict,
+			errors.ErrorCodeUserAlreadyExists,
+			fmt.Sprintf("User with email %s already exists", email),
+		)
+		return nil, appErr
 	}
 
 	// Check if user with same username already exists
 	existingUser, err = s.userRepo.GetByUsername(ctx, username)
 	if err == nil && existingUser != nil {
-		return nil, fmt.Errorf("user with username %s already exists", username)
+		appErr := errors.New(
+			errors.ErrorTypeConflict,
+			errors.ErrorCodeUserAlreadyExists,
+			fmt.Sprintf("User with username %s already exists", username),
+		)
+		return nil, appErr
 	}
 
 	// Create new user
@@ -58,7 +69,12 @@ func (s *authService) Register(ctx context.Context, email, username, password, f
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
+		appErr := errors.New(
+			errors.ErrorTypeInternal,
+			errors.ErrorCodeDatabaseError,
+			fmt.Sprintf("Failed to create user: %v", err),
+		)
+		return nil, appErr
 	}
 
 	return user, nil
