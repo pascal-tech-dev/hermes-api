@@ -75,52 +75,47 @@ func New() *ResponseBuilder {
 }
 
 // SuccessResponse creates a success options
-func SuccessResponse(data interface{}, message string) ApiResponseOptions {
-	return ApiResponseOptions{
-		Success:    true,
-		Data:       data,
-		Message:    message,
-		StatusCode: constants.StatusOK,
-	}
+func SuccessResponse(data interface{}, message string) *ResponseBuilder {
+	return New().
+		WithSuccess(true).
+		WithData(data).
+		WithMessage(message).
+		WithStatusCode(constants.StatusOK)
 }
 
-// CreatedResponse creates a created options
-func CreatedResponse(data interface{}, message string) ApiResponseOptions {
-	return ApiResponseOptions{
-		Success:    true,
-		Data:       data,
-		Message:    message,
-		StatusCode: constants.StatusCreated,
-	}
+// CreatedResponse creates a created response builder
+func CreatedResponse(data interface{}, message string) *ResponseBuilder {
+	return New().
+		WithSuccess(true).
+		WithData(data).
+		WithMessage(message).
+		WithStatusCode(constants.StatusCreated)
 }
 
 // AcceptedResponse creates an accepted options
-func AcceptedResponse(data interface{}, message string) ApiResponseOptions {
-	return ApiResponseOptions{
-		Success:    true,
-		Data:       data,
-		Message:    message,
-		StatusCode: constants.StatusAccepted,
-	}
+func AcceptedResponse(data interface{}, message string) *ResponseBuilder {
+	return New().
+		WithSuccess(true).
+		WithData(data).
+		WithMessage(message).
+		WithStatusCode(constants.StatusAccepted)
 }
 
 // NoContentResponse creates a no content options
-func NoContentResponse(message string) ApiResponseOptions {
-	return ApiResponseOptions{
-		Success:    true,
-		Message:    message,
-		StatusCode: constants.StatusNoContent,
-	}
+func NoContentResponse(message string) *ResponseBuilder {
+	return New().
+		WithSuccess(true).
+		WithMessage(message).
+		WithStatusCode(constants.StatusNoContent)
 }
 
 // ErrorResponse creates an error options
-func ErrorResponse(err *errors.AppError, message string) ApiResponseOptions {
-	return ApiResponseOptions{
-		Success:    false,
-		Error:      err,
-		Message:    message,
-		StatusCode: err.GetHTTPStatus(),
-	}
+func ErrorResponse(err *errors.AppError, message string) *ResponseBuilder {
+	return New().
+		WithSuccess(false).
+		WithError(err).
+		WithMessage(message).
+		WithStatusCode(err.GetHTTPStatus())
 }
 
 // WithSuccess sets the success flag
@@ -178,68 +173,24 @@ func (rb *ResponseBuilder) WithExtra(extra map[string]any) *ResponseBuilder {
 	return rb
 }
 
+// WithStatusCode sets the status code
+func (rb *ResponseBuilder) WithStatusCode(statusCode int) *ResponseBuilder {
+	rb.response.StatusCode = statusCode
+	return rb
+}
+
 // Build returns the final response
 func (rb *ResponseBuilder) Build() *Response {
 	return rb.response
 }
 
 // Send sends the response using Fiber context
-func (rb *ResponseBuilder) Send(c *fiber.Ctx, statusCode int) error {
-	return c.Status(statusCode).JSON(rb.response)
+func (rb *ResponseBuilder) Send(c *fiber.Ctx) error {
+	r := rb.Build()
+	return c.Status(r.StatusCode).JSON(r)
 }
 
 // Send sends the response using Fiber context
-func (r *Response) Send(c *fiber.Ctx, statusCode int) error {
-	return c.Status(statusCode).JSON(r)
-}
-
-// ApiResponse sends a standardized API response
-func ApiResponse(c *fiber.Ctx, options ApiResponseOptions) error {
-	builder := New().
-		WithSuccess(options.Success).
-		WithMessage(options.Message).
-		WithRequestID(options.RequestID).
-		WithMeta(options.Meta).
-		WithAPI(options.API).
-		WithExtra(options.Extra)
-
-	// Set data if provided
-	if options.Data != nil {
-		builder.WithData(options.Data)
-	}
-
-	// Set error if provided
-	if options.Error != nil {
-		builder.WithError(options.Error)
-	}
-
-	// Determine status code
-	statusCode := options.StatusCode
-	if statusCode == 0 {
-		if options.Success {
-			statusCode = constants.StatusOK
-		} else if options.Error != nil {
-			statusCode = options.Error.GetHTTPStatus()
-			if statusCode == 0 {
-				statusCode = constants.StatusInternalError
-			}
-		} else {
-			statusCode = constants.StatusOK
-		}
-	}
-
-	return builder.Send(c, statusCode)
-}
-
-// ApiResponseOptions contains all options for creating an API response
-type ApiResponseOptions struct {
-	Success    bool             `json:"success"`
-	Message    string           `json:"message,omitempty"`
-	Data       any              `json:"data,omitempty"`
-	Error      *errors.AppError `json:"error,omitempty"`
-	StatusCode int              `json:"-"`
-	RequestID  string           `json:"request_id,omitempty"`
-	Meta       *MetaInfo        `json:"meta,omitempty"`
-	API        *APIInfo         `json:"api,omitempty"`
-	Extra      map[string]any   `json:"extra,omitempty"`
-}
+// func (r *Response) Send(c *fiber.Ctx, statusCode int) error {
+// 	return c.Status(statusCode).JSON(r)
+// }

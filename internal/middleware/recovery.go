@@ -35,8 +35,7 @@ func Recovery() fiber.Handler {
 				appErr.HTTPStatus = fiber.StatusInternalServerError
 
 				// Send error response
-				options := response.ErrorResponse(appErr, "Internal server error")
-				_ = response.ApiResponse(c, options)
+				_ = response.ErrorResponse(appErr, "Internal server error").Send(c)
 			}
 		}()
 

@@ -48,11 +48,13 @@ const (
 	ErrorCodeNotificationQuotaExceeded ErrorCode = "NOTIFICATION_QUOTA_EXCEEDED"
 
 	// Validation errors
-	ErrorCodeRequiredField ErrorCode = "REQUIRED_FIELD"
-	ErrorCodeInvalidFormat ErrorCode = "INVALID_FORMAT"
-	ErrorCodeInvalidValue  ErrorCode = "INVALID_VALUE"
-	ErrorCodeFieldTooLong  ErrorCode = "FIELD_TOO_LONG"
-	ErrorCodeFieldTooShort ErrorCode = "FIELD_TOO_SHORT"
+	ErrorCodeRequiredField       ErrorCode = "REQUIRED_FIELD"
+	ErrorCodeInvalidFormat       ErrorCode = "INVALID_FORMAT"
+	ErrorCodeInvalidValue        ErrorCode = "INVALID_VALUE"
+	ErrorCodeFieldTooLong        ErrorCode = "FIELD_TOO_LONG"
+	ErrorCodeFieldTooShort       ErrorCode = "FIELD_TOO_SHORT"
+	ErrorCodeFieldLengthMismatch ErrorCode = "FIELD_LENGTH_MISMATCH"
+	ErrorCodeFieldNotEqual       ErrorCode = "FIELD_NOT_EQUAL"
 
 	// System errors
 	ErrorCodeDatabaseError        ErrorCode = "DATABASE_ERROR"
@@ -270,7 +272,7 @@ func (e *AppError) GetHTTPStatus() int {
 	}
 
 	switch e.Type {
-	case ErrorTypeValidation, ErrorTypeBadRequest:
+	case ErrorTypeBadRequest:
 		return http.StatusBadRequest
 	case ErrorTypeUnauthorized:
 		return http.StatusUnauthorized
@@ -280,6 +282,8 @@ func (e *AppError) GetHTTPStatus() int {
 		return http.StatusNotFound
 	case ErrorTypeConflict:
 		return http.StatusConflict
+	case ErrorTypeValidation:
+		return http.StatusUnprocessableEntity
 	case ErrorTypeRateLimit:
 		return http.StatusTooManyRequests
 	case ErrorTypeServiceUnavailable:

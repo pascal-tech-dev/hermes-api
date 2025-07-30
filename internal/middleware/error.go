@@ -39,8 +39,7 @@ func ErrorHandler() fiber.Handler {
 				zap.String("path", c.Path()),
 			)
 
-			options := response.ErrorResponse(appErr, appErr.Message)
-			return response.ApiResponse(c, options)
+			return response.ErrorResponse(appErr, appErr.Message).Send(c)
 		}
 
 		// Handle Fiber errors
@@ -58,8 +57,7 @@ func ErrorHandler() fiber.Handler {
 				zap.String("error_message", fiberErr.Message),
 			)
 
-			options := response.ErrorResponse(appErr, appErr.Message)
-			return response.ApiResponse(c, options)
+			return response.ErrorResponse(appErr, appErr.Message).Send(c)
 		}
 
 		// Handle unknown errors
@@ -73,7 +71,6 @@ func ErrorHandler() fiber.Handler {
 			zap.String("stack_trace", string(debug.Stack())),
 		)
 
-		options := response.ErrorResponse(appErr, appErr.Message)
-		return response.ApiResponse(c, options)
+		return response.ErrorResponse(appErr, appErr.Message).Send(c)
 	}
 }
