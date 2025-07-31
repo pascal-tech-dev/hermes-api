@@ -2,14 +2,16 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"hermes-api/internal/model"
 	"hermes-api/internal/repository"
-	"hermes-api/pkg/errors"
+	"hermes-api/pkg/errorx"
 
 	"github.com/golang-jwt/jwt/v5"
+	"gorm.io/gorm"
 )
 
 // AuthService defines the interface for authentication operations
@@ -39,9 +41,9 @@ func (s *authService) Register(ctx context.Context, email, username, password, f
 	// Check if user with same email already exists
 	existingUser, err := s.userRepo.GetByEmail(ctx, email)
 	if err == nil && existingUser != nil {
-		appErr := errors.New(
-			errors.ErrorTypeConflict,
-			errors.ErrorCodeUserAlreadyExists,
+		appErr := errorx.New(
+			errorx.ErrorTypeConflict,
+			errorx.ErrorCodeUserAlreadyExists,
 			fmt.Sprintf("User with email %s already exists", email),
 		)
 		return nil, appErr
@@ -50,9 +52,9 @@ func (s *authService) Register(ctx context.Context, email, username, password, f
 	// Check if user with same username already exists
 	existingUser, err = s.userRepo.GetByUsername(ctx, username)
 	if err == nil && existingUser != nil {
-		appErr := errors.New(
-			errors.ErrorTypeConflict,
-			errors.ErrorCodeUserAlreadyExists,
+		appErr := errorx.New(
+			errorx.ErrorTypeConflict,
+			errorx.ErrorCodeUserAlreadyExists,
 			fmt.Sprintf("User with username %s already exists", username),
 		)
 		return nil, appErr
@@ -69,9 +71,9 @@ func (s *authService) Register(ctx context.Context, email, username, password, f
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
-		appErr := errors.New(
-			errors.ErrorTypeInternal,
-			errors.ErrorCodeDatabaseError,
+		appErr := errorx.New(
+			errorx.ErrorTypeInternal,
+			errorx.ErrorCodeDatabaseError,
 			fmt.Sprintf("Failed to create user: %v", err),
 		)
 		return nil, appErr
@@ -85,23 +87,51 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 	// Get user by email
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
-		return "", nil, fmt.Errorf("invalid credentials")
-	}
-
-	// Check if user is active
-	if !user.IsActive {
-		return "", nil, fmt.Errorf("account is deactivated")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			appErr := errorx.New(
+				errorx.ErrorTypeUnauthorized,
+				errorx.ErrorCodeInvalidCredentials,
+				fmt.Sprintf("User with email %s not found", email),
+			)
+			return "", nil, appErr
+		}
+		appErr := errorx.New(
+			errorx.ErrorTypeInternal,
+			errorx.ErrorCodeDatabaseError,
+			"Failed to fetch user data",
+		)
+		return "", nil, appErr
 	}
 
 	// Verify password
 	if !user.CheckPassword(password) {
-		return "", nil, fmt.Errorf("invalid credentials")
+		appErr := errorx.New(
+			errorx.ErrorTypeUnauthorized,
+			errorx.ErrorCodeInvalidCredentials,
+			"Invalid credentials",
+		)
+		return "", nil, appErr
+	}
+
+	// Check if user is active, if not Forbidden
+	if !user.IsActive {
+		appErr := errorx.New(
+			errorx.ErrorTypeForbidden,
+			errorx.ErrorCodeAccountDeactivated,
+			"Account is deactivated",
+		)
+		return "", nil, appErr
 	}
 
 	// Generate JWT token
 	token, err := s.generateToken(user)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to generate token: %w", err)
+		appErr := errorx.New(
+			errorx.ErrorTypeInternal,
+			errorx.ErrorCodeTokenGenerationFailed,
+			"Failed to generate token",
+		)
+		return "", nil, appErr
 	}
 
 	return token, user, nil

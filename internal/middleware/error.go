@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"hermes-api/pkg/errors"
+	"hermes-api/pkg/errorx"
 	"hermes-api/pkg/logger"
 	"hermes-api/pkg/response"
 	"runtime/debug"
@@ -28,7 +28,7 @@ func ErrorHandler() fiber.Handler {
 		}
 
 		// Handle AppError
-		if appErr, ok := err.(*errors.AppError); ok {
+		if appErr, ok := err.(*errorx.AppError); ok {
 			appErr.RequestID = requestIDStr
 
 			logger.Error("Application error occurred", err,
@@ -44,8 +44,8 @@ func ErrorHandler() fiber.Handler {
 
 		// Handle Fiber errors
 		if fiberErr, ok := err.(*fiber.Error); ok {
-			errorType, errorCode := errors.MapFiberError(fiberErr.Code, fiberErr.Message)
-			appErr := errors.New(errorType, errorCode, fiberErr.Message)
+			errorType, errorCode := errorx.MapFiberError(fiberErr.Code, fiberErr.Message)
+			appErr := errorx.New(errorType, errorCode, fiberErr.Message)
 			appErr.RequestID = requestIDStr
 			appErr.HTTPStatus = fiberErr.Code
 
@@ -61,7 +61,7 @@ func ErrorHandler() fiber.Handler {
 		}
 
 		// Handle unknown errors
-		appErr := errors.New(errors.ErrorTypeInternal, errors.ErrorCodeUnknownError, "Internal server error")
+		appErr := errorx.New(errorx.ErrorTypeInternal, errorx.ErrorCodeUnknownError, "Internal server error")
 		appErr.RequestID = requestIDStr
 
 		logger.Error("Unknown error occurred", err,

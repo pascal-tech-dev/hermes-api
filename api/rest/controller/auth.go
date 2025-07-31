@@ -3,12 +3,11 @@ package controller
 import (
 	"hermes-api/internal/dto"
 	"hermes-api/internal/service"
-	"hermes-api/pkg/errors"
-	"hermes-api/pkg/logger"
+	"hermes-api/pkg/context"
+	"hermes-api/pkg/errorx"
 	"hermes-api/pkg/response"
 
 	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 )
 
 // AuthController handles HTTP requests for authentication operations
@@ -27,7 +26,7 @@ func NewAuthController(authService service.AuthService) *AuthController {
 func (c *AuthController) Register(ctx *fiber.Ctx) error {
 	var req dto.RegisterRequest
 	if err := ctx.BodyParser(&req); err != nil {
-		appErr := errors.New(errors.ErrorTypeBadRequest, errors.ErrorCodeInvalidFormat, err.Error())
+		appErr := errorx.New(errorx.ErrorTypeBadRequest, errorx.ErrorCodeInvalidFormat, err.Error())
 		return appErr // return the error to the middleware
 	}
 
@@ -35,7 +34,11 @@ func (c *AuthController) Register(ctx *fiber.Ctx) error {
 		return err // return the error to the middleware
 	}
 
-	user, err := c.authService.Register(ctx.Context(), req.Email, req.Username, req.Password, req.FirstName, req.LastName)
+	// Create a new context for the service
+	serviceCtx, cancel := context.New(ctx).WithDefaultTimeout().Build()
+	defer cancel()
+
+	user, err := c.authService.Register(serviceCtx, req.Email, req.Username, req.Password, req.FirstName, req.LastName)
 	if err != nil {
 		return err // return the error to the middleware
 	}
@@ -49,19 +52,16 @@ func (c *AuthController) Register(ctx *fiber.Ctx) error {
 func (c *AuthController) Login(ctx *fiber.Ctx) error {
 	var req dto.LoginRequest
 	if err := ctx.BodyParser(&req); err != nil {
-		logger.Error("Failed to parse login request", err)
-		//appErr := errors.New(errors.ErrorTypeValidation, errors.ErrorCodeInvalidFormat, "Invalid request body")
-		//options := response.ErrorResponse(appErr, "Invalid request body")
-		// return response.ApiResponse(ctx, options)
-		return err
+		appErr := errorx.New(errorx.ErrorTypeBadRequest, errorx.ErrorCodeInvalidFormat, err.Error())
+		return appErr
 	}
 
-	token, user, err := c.authService.Login(ctx.Context(), req.Email, req.Password)
+	// Create a new context for the service
+	serviceCtx, cancel := context.New(ctx).WithDefaultTimeout().Build()
+	defer cancel()
+
+	token, user, err := c.authService.Login(serviceCtx, req.Email, req.Password)
 	if err != nil {
-		logger.Error("Failed to login user", err, zap.String("email", req.Email))
-		// appErr := errors.New(errors.ErrorTypeValidation, errors.ErrorCodeInvalidValue, "Invalid credentials")
-		// options := response.ErrorResponse(appErr, "Invalid credentials")
-		// return response.ApiResponse(ctx, options)
 		return err
 	}
 
@@ -80,7 +80,7 @@ func (c *AuthController) Me(ctx *fiber.Ctx) error {
 	// Get user from context (set by auth middleware)
 	user := ctx.Locals("user")
 	if user == nil {
-		appErr := errors.New(errors.ErrorTypeUnauthorized, errors.ErrorCodeFiberUnauthorized, "User not authenticated")
+		appErr := errorx.New(errorx.ErrorTypeUnauthorized, errorx.ErrorCodeFiberUnauthorized, "User not authenticated")
 		// options := response.ErrorResponse(appErr, "User not authenticated")
 		// return response.ApiResponse(ctx, options)
 		return appErr

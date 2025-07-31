@@ -1,4 +1,4 @@
-package errors
+package errorx
 
 import (
 	"fmt"
@@ -29,11 +29,12 @@ type ErrorCode string
 
 const (
 	// Auth related errors
-	ErrorCodeInvalidCredentials ErrorCode = "INVALID_CREDENTIALS"
-	ErrorCodeAccountDeactivated ErrorCode = "ACCOUNT_DEACTIVATED"
-	ErrorCodeUserAlreadyExists  ErrorCode = "USER_ALREADY_EXISTS"
-	ErrorCodeTokenExpired       ErrorCode = "TOKEN_EXPIRED"
-	ErrorCodeTokenInvalid       ErrorCode = "TOKEN_INVALID"
+	ErrorCodeInvalidCredentials    ErrorCode = "INVALID_CREDENTIALS"
+	ErrorCodeAccountDeactivated    ErrorCode = "ACCOUNT_DEACTIVATED"
+	ErrorCodeUserAlreadyExists     ErrorCode = "USER_ALREADY_EXISTS"
+	ErrorCodeTokenGenerationFailed ErrorCode = "TOKEN_GENERATION_FAILED"
+	ErrorCodeTokenExpired          ErrorCode = "TOKEN_EXPIRED"
+	ErrorCodeTokenInvalid          ErrorCode = "TOKEN_INVALID"
 
 	// App related errors
 	ErrorCodeAppNotFound      ErrorCode = "APP_NOT_FOUND"

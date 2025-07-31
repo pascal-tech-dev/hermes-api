@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"hermes-api/internal/service"
-	"hermes-api/pkg/errors"
+	"hermes-api/pkg/errorx"
 	"hermes-api/pkg/logger"
 	"strings"
 
@@ -17,7 +17,7 @@ func AuthMiddleware(authService service.AuthService) fiber.Handler {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
 			logger.Error("Missing Authorization header", nil)
-			appErr := errors.New(errors.ErrorTypeUnauthorized, errors.ErrorCodeFiberUnauthorized, "Missing authorization header")
+			appErr := errorx.New(errorx.ErrorTypeUnauthorized, errorx.ErrorCodeFiberUnauthorized, "Missing authorization header")
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": appErr,
 			})
@@ -26,7 +26,7 @@ func AuthMiddleware(authService service.AuthService) fiber.Handler {
 		// Check if it's a Bearer token
 		if !strings.HasPrefix(authHeader, "Bearer ") {
 			logger.Error("Invalid authorization header format", nil, zap.String("header", authHeader))
-			appErr := errors.New(errors.ErrorTypeUnauthorized, errors.ErrorCodeFiberUnauthorized, "Invalid authorization header format")
+			appErr := errorx.New(errorx.ErrorTypeUnauthorized, errorx.ErrorCodeFiberUnauthorized, "Invalid authorization header format")
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": appErr,
 			})
@@ -39,7 +39,7 @@ func AuthMiddleware(authService service.AuthService) fiber.Handler {
 		user, err := authService.GetUserFromToken(token)
 		if err != nil {
 			logger.Error("Invalid token", err)
-			appErr := errors.New(errors.ErrorTypeUnauthorized, errors.ErrorCodeFiberUnauthorized, "Invalid or expired token")
+			appErr := errorx.New(errorx.ErrorTypeUnauthorized, errorx.ErrorCodeFiberUnauthorized, "Invalid or expired token")
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": appErr,
 			})
@@ -48,7 +48,7 @@ func AuthMiddleware(authService service.AuthService) fiber.Handler {
 		// Check if user is active
 		if !user.IsActive {
 			logger.Error("User account is deactivated", nil, zap.String("user_id", user.ID.String()))
-			appErr := errors.New(errors.ErrorTypeForbidden, errors.ErrorCodeFiberForbidden, "User account is deactivated")
+			appErr := errorx.New(errorx.ErrorTypeForbidden, errorx.ErrorCodeFiberForbidden, "User account is deactivated")
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"error": appErr,
 			})

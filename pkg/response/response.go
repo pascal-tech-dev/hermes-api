@@ -2,7 +2,7 @@ package response
 
 import (
 	"hermes-api/pkg/constants"
-	"hermes-api/pkg/errors"
+	"hermes-api/pkg/errorx"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,8 +24,8 @@ type Response struct {
 
 // ErrorInfo contains error-related information
 type ErrorInfo struct {
-	Type    errors.ErrorType `json:"type,omitempty"`
-	Code    errors.ErrorCode `json:"code,omitempty"`
+	Type    errorx.ErrorType `json:"type,omitempty"`
+	Code    errorx.ErrorCode `json:"code,omitempty"`
 	Message string           `json:"message,omitempty"`
 	Details map[string]any   `json:"details,omitempty"`
 }
@@ -110,7 +110,7 @@ func NoContentResponse(message string) *ResponseBuilder {
 }
 
 // ErrorResponse creates an error options
-func ErrorResponse(err *errors.AppError, message string) *ResponseBuilder {
+func ErrorResponse(err *errorx.AppError, message string) *ResponseBuilder {
 	return New().
 		WithSuccess(false).
 		WithError(err).
@@ -137,7 +137,7 @@ func (rb *ResponseBuilder) WithMessage(message string) *ResponseBuilder {
 }
 
 // WithError sets the error information
-func (rb *ResponseBuilder) WithError(err *errors.AppError) *ResponseBuilder {
+func (rb *ResponseBuilder) WithError(err *errorx.AppError) *ResponseBuilder {
 	if err != nil {
 		rb.response.Error = &ErrorInfo{
 			Type:    err.Type,

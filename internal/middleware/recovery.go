@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"hermes-api/pkg/errors"
+	"hermes-api/pkg/errorx"
 	"hermes-api/pkg/logger"
 	"hermes-api/pkg/response"
 	"runtime/debug"
@@ -30,7 +30,7 @@ func Recovery() fiber.Handler {
 				)
 
 				// Create an internal server error
-				appErr := errors.New(errors.ErrorTypeInternal, errors.ErrorCodeUnknownError, "Internal server error")
+				appErr := errorx.New(errorx.ErrorTypeInternal, errorx.ErrorCodeUnknownError, "Internal server error")
 				appErr.RequestID = requestID
 				appErr.HTTPStatus = fiber.StatusInternalServerError
 

@@ -1,7 +1,7 @@
 package validation
 
 import (
-	"hermes-api/pkg/errors"
+	"hermes-api/pkg/errorx"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -12,24 +12,24 @@ func MapValidationErrors(err error) error {
 		for _, e := range validationErrors {
 			switch e.Tag() {
 			case "required":
-				fieldErrors[e.Field()] = errors.ErrorCodeRequiredField
+				fieldErrors[e.Field()] = errorx.ErrorCodeRequiredField
 			case "email, url, uuid":
-				fieldErrors[e.Field()] = errors.ErrorCodeInvalidFormat
+				fieldErrors[e.Field()] = errorx.ErrorCodeInvalidFormat
 			case "min":
-				fieldErrors[e.Field()] = errors.ErrorCodeFieldTooShort
+				fieldErrors[e.Field()] = errorx.ErrorCodeFieldTooShort
 			case "max":
-				fieldErrors[e.Field()] = errors.ErrorCodeFieldTooLong
+				fieldErrors[e.Field()] = errorx.ErrorCodeFieldTooLong
 			case "len":
-				fieldErrors[e.Field()] = errors.ErrorCodeFieldLengthMismatch
+				fieldErrors[e.Field()] = errorx.ErrorCodeFieldLengthMismatch
 			case "eq":
-				fieldErrors[e.Field()] = errors.ErrorCodeFieldNotEqual
+				fieldErrors[e.Field()] = errorx.ErrorCodeFieldNotEqual
 			case "ne":
-				fieldErrors[e.Field()] = errors.ErrorCodeFieldNotEqual
+				fieldErrors[e.Field()] = errorx.ErrorCodeFieldNotEqual
 			default:
-				fieldErrors[e.Field()] = errors.ErrorCodeInvalidValue
+				fieldErrors[e.Field()] = errorx.ErrorCodeInvalidValue
 			}
 		}
-		appErr := errors.New(errors.ErrorTypeValidation, errors.ErrorCodeInvalidValue, "Invalid request body")
+		appErr := errorx.New(errorx.ErrorTypeValidation, errorx.ErrorCodeInvalidValue, "Invalid request body")
 		return appErr.WithDetails(fieldErrors)
 	}
 	return nil
