@@ -72,7 +72,7 @@ func AutoMigrate() error {
 	}
 
 	// Add your models here for auto-migration
-	err := DB.AutoMigrate(&model.User{})
+	err := DB.AutoMigrate(&model.User{}, &model.Application{})
 	if err != nil {
 		return err
 	}

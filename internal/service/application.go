@@ -30,6 +30,7 @@ func NewApplicationService(applicationRepo repository.ApplicationRepository) App
 
 // CreateApplication implements ApplicationService.
 func (a *applicationService) CreateApplication(ctx context.Context, application *model.Application) error {
+
 	panic("unimplemented")
 }
 

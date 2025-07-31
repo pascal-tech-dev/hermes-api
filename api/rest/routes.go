@@ -3,7 +3,6 @@ package rest
 import (
 	"hermes-api/api/rest/controller"
 	"hermes-api/internal/service"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -21,6 +20,9 @@ func setupV1Routes(api fiber.Router, controllerManager *controller.ControllerMan
 
 	// Users routes (protected)
 	setupUserRoutes(api, controllerManager.User(), authMiddleware)
+
+	// Applications routes (protected)
+	setupApplicationRoutes(api, controllerManager.Application(), authMiddleware)
 }
 
 // setupAuthRoutes configures authentication-related routes
@@ -46,19 +48,12 @@ func setupUserRoutes(api fiber.Router, userController *controller.UserController
 	users.Delete("/:id", userController.DeleteUser)
 }
 
-// Health check handler
-// To use this function, register it as a route handler in your Fiber app, for example:
-//
-//	app.Get("/health", healthCheck)
-//
-// or if using a router group:
-//
-//	api.Get("/health", healthCheck)
-func healthCheck(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{
-		"status":    "ok",
-		"service":   "hermes-api",
-		"timestamp": time.Now().UTC(),
-		"version":   "1.0.0",
-	})
+// setupApplicationRoutes configures application-related routes
+func setupApplicationRoutes(api fiber.Router, applicationController *controller.ApplicationController, authMiddleware fiber.Handler) {
+	applications := api.Group("/applications")
+
+	// Apply auth middleware to all application routes
+	applications.Use(authMiddleware)
+
+	applications.Post("/", applicationController.CreateApplication)
 }

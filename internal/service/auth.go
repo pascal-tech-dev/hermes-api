@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// AuthService defines the interface for authentication operations
+// AuthService defines the interface for authentication logic
 type AuthService interface {
 	Register(ctx context.Context, email, username, password, firstName, lastName string) (*model.User, error)
 	Login(ctx context.Context, email, password string) (string, *model.User, error)
