@@ -6,15 +6,17 @@ import (
 
 	"hermes-api/internal/model"
 	"hermes-api/internal/repository"
+
+	"github.com/google/uuid"
 )
 
 // UserService defines the interface for user business logic
 type UserService interface {
 	// Basic CRUD operations
 	CreateUser(ctx context.Context, user *model.User) error
-	GetUserByID(ctx context.Context, id uint) (*model.User, error)
+	GetUserByID(ctx context.Context, id uuid.UUID) (*model.User, error)
 	UpdateUser(ctx context.Context, user *model.User) error
-	DeleteUser(ctx context.Context, id uint) error
+	DeleteUser(ctx context.Context, id uuid.UUID) error
 
 	// Query operations
 	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
@@ -59,7 +61,7 @@ func (s *userService) CreateUser(ctx context.Context, user *model.User) error {
 }
 
 // GetUserByID retrieves a user by ID
-func (s *userService) GetUserByID(ctx context.Context, id uint) (*model.User, error) {
+func (s *userService) GetUserByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	return s.userRepo.GetByID(ctx, id)
 }
 
@@ -71,7 +73,7 @@ func (s *userService) GetUserByEmail(ctx context.Context, email string) (*model.
 // UpdateUser updates an existing user
 func (s *userService) UpdateUser(ctx context.Context, user *model.User) error {
 	// Check if user exists
-	existingUser, err := s.userRepo.GetByID(ctx, 0)
+	existingUser, err := s.userRepo.GetByID(ctx, user.ID)
 	if err != nil {
 		return fmt.Errorf("user not found: %w", err)
 	}
@@ -82,7 +84,7 @@ func (s *userService) UpdateUser(ctx context.Context, user *model.User) error {
 }
 
 // DeleteUser deletes a user
-func (s *userService) DeleteUser(ctx context.Context, id uint) error {
+func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	return s.userRepo.Delete(ctx, id)
 }
 

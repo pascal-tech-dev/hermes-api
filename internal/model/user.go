@@ -19,16 +19,17 @@ const (
 
 // User represents a user in the system
 type User struct {
-	ID        uuid.UUID      `json:"id";primaryKey"`
-	Email     string         `json:"email" gorm:"uniqueIndex;not null"`
-	Username  string         `json:"username" gorm:"uniqueIndex;not null"`
-	Password  string         `json:"-" gorm:"not null"` // "-" means this field won't be included in JSON
-	FirstName string         `json:"first_name" gorm:"not null"`
-	LastName  string         `json:"last_name" gorm:"not null"`
-	IsActive  bool           `json:"is_active" gorm:"default:true"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"` // Soft delete
+	ID           uuid.UUID      `json:"id" gorm:"primaryKey"`
+	Email        string         `json:"email" gorm:"uniqueIndex;not null"`
+	Username     string         `json:"username" gorm:"uniqueIndex;not null"`
+	Password     string         `json:"-" gorm:"not null"` // "-" means this field won't be included in JSON
+	FirstName    string         `json:"first_name" gorm:"not null"`
+	LastName     string         `json:"last_name" gorm:"not null"`
+	IsActive     bool           `json:"is_active" gorm:"default:true"`
+	Applications []Application  `json:"applications" gorm:"foreignKey:UserID"` // 1 to many relationship
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"` // Soft delete
 }
 
 // TableName specifies the table name for the User model

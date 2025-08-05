@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 )
 
 // UserController handles HTTP requests for user operations
@@ -89,23 +88,23 @@ func (c *UserController) CreateUser(ctx *fiber.Ctx) error {
 
 // GetUserByID retrieves a user by ID
 func (c *UserController) GetUserByID(ctx *fiber.Ctx) error {
-	idStr := ctx.Params("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
-	if err != nil {
-		// appErr := errors.New(errors.ErrorTypeValidation, errors.ErrorCodeInvalidValue, "Invalid user ID")
-		// options := response.ErrorResponse(appErr, "Invalid user ID")
-		// return response.ApiResponse(ctx, options)
-		return err
-	}
+	// idStr := ctx.Params("id")
+	// id, err := strconv.ParseUint(idStr, 10, 32)
+	// if err != nil {
+	// 	// appErr := errors.New(errors.ErrorTypeValidation, errors.ErrorCodeInvalidValue, "Invalid user ID")
+	// 	// options := response.ErrorResponse(appErr, "Invalid user ID")
+	// 	// return response.ApiResponse(ctx, options)
+	// 	return err
+	// }
 
-	_, err = c.userService.GetUserByID(ctx.Context(), uint(id))
-	if err != nil {
-		logger.Error("Failed to retrieve user", err, zap.String("user_id", idStr))
-		// appErr := errors.New(errors.ErrorTypeNotFound, errors.ErrorCodeAppNotFound, "User not found")
-		// options := response.ErrorResponse(appErr, "User not found")
-		// return response.ApiResponse(ctx, options)
-		return err
-	}
+	// _, err = c.userService.GetUserByID(ctx.Context(), uint(id))
+	// if err != nil {
+	// 	logger.Error("Failed to retrieve user", err, zap.String("user_id", idStr))
+	// 	// appErr := errors.New(errors.ErrorTypeNotFound, errors.ErrorCodeAppNotFound, "User not found")
+	// 	// options := response.ErrorResponse(appErr, "User not found")
+	// 	// return response.ApiResponse(ctx, options)
+	// 	return err
+	// }
 
 	// options := response.SuccessResponse(user, "User retrieved successfully")
 	// return response.ApiResponse(ctx, options)

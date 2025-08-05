@@ -9,8 +9,11 @@ import (
 	"hermes-api/internal/model"
 	"hermes-api/internal/repository"
 	"hermes-api/pkg/errorx"
+	"hermes-api/pkg/logger"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -170,13 +173,19 @@ func (s *authService) GetUserFromToken(tokenString string) (*model.User, error) 
 		return nil, fmt.Errorf("invalid token claims")
 	}
 
-	userID, ok := claims["user_id"].(float64)
+	userIDStr, ok := claims["user_id"].(string)
+	logger.Info("User ID from token", zap.String("user_id", userIDStr))
 	if !ok {
 		return nil, fmt.Errorf("invalid user ID in token")
 	}
 
 	// Get user from database
-	user, err := s.userRepo.GetByID(context.Background(), uint(userID))
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user ID in token: %w", err)
+	}
+
+	user, err := s.userRepo.GetByID(context.Background(), userID)
 	if err != nil {
 		return nil, fmt.Errorf("user not found: %w", err)
 	}

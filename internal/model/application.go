@@ -16,13 +16,13 @@ const (
 )
 
 type Application struct {
-	ID          uuid.UUID         `gorm:"primaryKey"`
-	Name        string            `gorm:"not null"`
-	Description string            `gorm:"not null"`
+	ID          uuid.UUID         `json:"id" gorm:"primaryKey"`
+	UserID      uuid.UUID         `json:"user_id" gorm:"not null"`
+	User        User              `json:"-" gorm:"foreignKey:UserID"`
+	Name        string            `json:"name" gorm:"not null"`
+	Description string            `json:"description" gorm:"not null"`
 	APIKey      string            `json:"api_key" gorm:"uniqueIndex;not null"`
 	Status      ApplicationStatus `json:"status" gorm:"default:'active'"`
-	UserID      uuid.UUID         `json:"user_id" gorm:"not null"`
-	User        User              `json:"user" gorm:"foreignKey:UserID"`
 	CreatedAt   time.Time         `json:"created_at"`
 	UpdatedAt   time.Time         `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt    `json:"-" gorm:"index"` // Soft delete
