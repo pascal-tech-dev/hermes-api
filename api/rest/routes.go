@@ -56,4 +56,9 @@ func setupApplicationRoutes(api fiber.Router, applicationController *controller.
 	applications.Use(authMiddleware)
 
 	applications.Post("/", applicationController.CreateApplication)
+	applications.Get("/", applicationController.GetApplications)                        // Get all applications (no pagination)
+	applications.Get("/paginated", applicationController.GetApplicationsWithPagination) // Get applications with pagination
+	applications.Get("/:id", applicationController.GetApplicationByID)
+	applications.Put("/:id", applicationController.UpdateApplication)
+	applications.Delete("/:id", applicationController.DeleteApplication)
 }

@@ -8,11 +8,14 @@ import (
 	"hermes-api/pkg/errorx"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // ApplicationService defines the interface for application business logic
 type ApplicationService interface {
 	CreateApplication(ctx context.Context, userID uuid.UUID, req dto.CreateApplicationRequest) (*model.Application, error)
+	GetApplications(ctx context.Context, userID uuid.UUID) ([]*model.Application, error)
+	GetApplicationsWithPagination(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*model.Application, error)
 	GetApplicationByID(ctx context.Context, id uuid.UUID) (*model.Application, error)
 	UpdateApplication(ctx context.Context, application *model.Application) error
 	DeleteApplication(ctx context.Context, id uuid.UUID) error
@@ -53,17 +56,101 @@ func (s *applicationService) CreateApplication(ctx context.Context, userID uuid.
 	return application, nil
 }
 
-// DeleteApplication implements ApplicationService.
-func (s *applicationService) DeleteApplication(ctx context.Context, id uuid.UUID) error {
-	panic("unimplemented")
+// GetApplications implements ApplicationService.
+func (s *applicationService) GetApplications(ctx context.Context, userID uuid.UUID) ([]*model.Application, error) {
+	conditions := map[string]any{
+		"user_id": userID,
+	}
+
+	// Use base repository's ListWithFilter method directly
+	applications, err := s.applicationRepo.ListWithFilter(ctx, 100, 0, conditions)
+	if err != nil {
+		appErr := errorx.New(
+			errorx.ErrorTypeInternal,
+			errorx.ErrorCodeDatabaseError,
+			"Failed to retrieve applications",
+		)
+		return nil, appErr
+	}
+
+	return applications, nil
+}
+
+// GetApplicationsWithPagination implements ApplicationService with pagination support
+func (s *applicationService) GetApplicationsWithPagination(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*model.Application, error) {
+	conditions := map[string]any{
+		"user_id": userID,
+	}
+
+	// Use base repository's ListWithFilter method with pagination
+	applications, err := s.applicationRepo.ListWithFilter(ctx, limit, offset, conditions)
+	if err != nil {
+		appErr := errorx.New(
+			errorx.ErrorTypeInternal,
+			errorx.ErrorCodeDatabaseError,
+			"Failed to retrieve applications",
+		)
+		return nil, appErr
+	}
+
+	return applications, nil
 }
 
 // GetApplicationByID implements ApplicationService.
 func (s *applicationService) GetApplicationByID(ctx context.Context, id uuid.UUID) (*model.Application, error) {
-	panic("unimplemented")
+	application, err := s.applicationRepo.GetByID(ctx, id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			appErr := errorx.New(
+				errorx.ErrorTypeNotFound,
+				errorx.ErrorCodeAppNotFound,
+				"Application not found",
+			)
+			return nil, appErr
+		}
+		appErr := errorx.New(
+			errorx.ErrorTypeInternal,
+			errorx.ErrorCodeDatabaseError,
+			"Failed to retrieve application",
+		)
+		return nil, appErr
+	}
+
+	return application, nil
 }
 
 // UpdateApplication implements ApplicationService.
 func (s *applicationService) UpdateApplication(ctx context.Context, application *model.Application) error {
-	panic("unimplemented")
+	if err := s.applicationRepo.Update(ctx, application); err != nil {
+		appErr := errorx.New(
+			errorx.ErrorTypeInternal,
+			errorx.ErrorCodeDatabaseError,
+			"Failed to update application",
+		)
+		return appErr
+	}
+
+	return nil
+}
+
+// DeleteApplication implements ApplicationService.
+func (s *applicationService) DeleteApplication(ctx context.Context, id uuid.UUID) error {
+	if err := s.applicationRepo.Delete(ctx, id); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			appErr := errorx.New(
+				errorx.ErrorTypeNotFound,
+				errorx.ErrorCodeAppNotFound,
+				"Application not found",
+			)
+			return appErr
+		}
+		appErr := errorx.New(
+			errorx.ErrorTypeInternal,
+			errorx.ErrorCodeDatabaseError,
+			"Failed to delete application",
+		)
+		return appErr
+	}
+
+	return nil
 }

@@ -12,11 +12,22 @@ type CreateApplicationRequest struct {
 	Description string `json:"description" validate:"required,min=3,max=255"`
 }
 
+type UpdateApplicationRequest struct {
+	Name        string `json:"name" validate:"omitempty,min=3,max=100"`
+	Description string `json:"description" validate:"omitempty,min=3,max=255"`
+	Status      string `json:"status" validate:"omitempty,oneof=active inactive suspended"`
+}
+
 type CreateApplicationResponse struct {
 	ID uuid.UUID `json:"id"`
 }
 
 func (r *CreateApplicationRequest) Validate() error {
+	validate := validator.New()
+	return validation.MapValidationErrors(validate.Struct(r))
+}
+
+func (r *UpdateApplicationRequest) Validate() error {
 	validate := validator.New()
 	return validation.MapValidationErrors(validate.Struct(r))
 }

@@ -15,6 +15,7 @@ type BaseRepository[T any] interface {
 	Update(ctx context.Context, entity *T) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, limit, offset int) ([]*T, error)
+	ListWithFilter(ctx context.Context, limit, offset int, conditions map[string]any) ([]*T, error)
 	Count(ctx context.Context) (int64, error)
 }
 
@@ -53,6 +54,19 @@ func (r *baseRepository[T]) Delete(ctx context.Context, id uuid.UUID) error {
 func (r *baseRepository[T]) List(ctx context.Context, limit, offset int) ([]*T, error) {
 	var entities []*T
 	err := r.db.WithContext(ctx).Limit(limit).Offset(offset).Find(&entities).Error
+	return entities, err
+}
+
+func (r *baseRepository[T]) ListWithFilter(ctx context.Context, limit, offset int, conditions map[string]any) ([]*T, error) {
+	var entities []*T
+	query := r.db.WithContext(ctx)
+
+	// Apply filters
+	for key, value := range conditions {
+		query = query.Where(key+" = ?", value)
+	}
+
+	err := query.Limit(limit).Offset(offset).Find(&entities).Error
 	return entities, err
 }
 
