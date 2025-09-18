@@ -109,3 +109,16 @@ graph LR
     B --> C[Service Layer]
     C --> D[(Database)]
 ```
+
+## 🧩 Data Model Overview
+
+Hermes uses a relational database (PostgreSQL) for persistent storage. The design follows a normalized approach to capture core domain entities such as notifications, users and channels.
+
+### ✨ Entity Relationship Overview (Core)
+
+```mermaid
+erDiagram
+    USERS ||--o{ NOTIFICATIONS : has
+    USERS ||--o{ TOKENS : owns
+    NOTIFICATIONS }o--|| CHANNELS : sent_via
+    NOTIFICATIONS }o--|| NOTIFICATION_STATUS : has
