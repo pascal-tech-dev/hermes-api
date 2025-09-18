@@ -111,6 +111,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("database.port", "5432")
 	v.SetDefault("database.name", "hermes")
 	v.SetDefault("database.user", "hermes")
+	v.SetDefault("database.password", "hermes")
 	v.SetDefault("database.ssl_mode", "disable")
 
 	// Redis defaults

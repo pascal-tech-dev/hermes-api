@@ -20,6 +20,7 @@
         ]
       }
     },
+    "forwardPorts": [2345],
     "remoteUser": "vscode",
     "postCreateCommand": "go version && go env",
     "remoteEnv": {
